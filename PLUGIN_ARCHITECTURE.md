@@ -1,5 +1,11 @@
 # Docker Router Plugin Architecture Document
 
+## ⚠️ STATUS: FUTURE SPECIFICATION - NOT IMPLEMENTED
+
+This document describes a **future** Docker plugin-based solution for inter-stack communication using VXLAN overlay networks. This is a **design specification only** - the plugin has not been implemented.
+
+**Current Implementation**: See README.md for the container-based solution that is fully implemented and tested.
+
 ## Executive Summary
 
 This document describes a Docker plugin-based solution for inter-stack communication using VXLAN overlay networks. The plugin provides automated peer discovery, VTEP management, and routing between Docker Compose stacks across multiple hosts without requiring Docker Swarm mode or external orchestration.

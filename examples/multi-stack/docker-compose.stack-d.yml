@@ -1,39 +1,70 @@
+version: '3.8'
+
+configs:
+  routing-config:
+    content: |
+      version: 1
+      stack_id: stack-d
+      vni: 2000
+      vxlan_subnet: 10.2.1.0/24
+      local_vxlan_ip: 10.2.1.2
+      container_subnet: 172.25.0.0/16
+      
+      stack_mappings:
+        stack-d:
+          vxlan_ip: 10.2.1.2
+          container_subnet: 172.25.0.0/16
+  
+  discovery-config:
+    content: |
+      {
+        "version": 1,
+        "last_update": "2025-07-16T12:00:00Z",
+        "peers": [
+          {
+            "stack_id": "stack-e",
+            "host_ip": "192.168.200.142",
+            "vxlan_endpoint": "192.168.200.142:4789",
+            "vni": 2000,
+            "last_seen": "2025-07-16T12:00:00Z",
+            "status": "active"
+          }
+        ]
+      }
+
 services:
-  discovery-d:
-    build: ../../discovery
+  router:
+    image: docker-router:latest
     network_mode: host
+    privileged: true
     environment:
       - STACK_ID=stack-d
-      - VNI=1003
-      - MULTICAST_GROUP=239.1.1.1
-      - DISCOVERY_PORT=4790
-      - ANNOUNCE_INTERVAL=30
-      - PEER_TIMEOUT=90
-    volumes:
-      - discovery-data-d:/var/lib/docker-router
+      - VNI=2000
+      - VXLAN_SUBNET=10.2.1.0/24
+      - LOCAL_VXLAN_IP=10.2.1.2
+      - CONFIG_FILE=/etc/router/routing.yaml
+    configs:
+      - source: routing-config
+        target: /etc/router/routing.yaml
+      - source: discovery-config
+        target: /var/lib/docker-router/discovery.json
     restart: unless-stopped
+    container_name: router-stack-d
 
-  test-d:
-    image: alpine:latest
-    command: |
-      sh -c "
-        echo 'Stack D Service Started'
-        while true; do
-          echo '=== Stack D Discovery Status ==='
-          if [ -f /shared/discovery.json ]; then
-            echo 'Discovered peers:'
-            cat /shared/discovery.json | grep -A 20 'peers' || echo 'No peers section'
-          else
-            echo 'No discovery data found'
-          fi
-          echo '================================'
-          sleep 45
-        done
-      "
-    volumes:
-      - discovery-data-d:/shared:ro
+  app:
+    image: nginx:alpine
+    networks:
+      - internal
     depends_on:
-      - discovery-d
+      - router
+    ports:
+      - "8081:80"
+    container_name: app-stack-d
 
-volumes:
-  discovery-data-d:
+networks:
+  internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+          gateway: 172.25.0.1

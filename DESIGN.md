@@ -447,6 +447,31 @@ done
 - No direct network communication with discovery container
 - All coordination via shared volume only
 
+### Security Architecture Options
+
+#### Option 1: Secure Privilege Separation (Recommended)
+
+**Discovery Container (Privileged)**:
+- `privileged: true` and `network_mode: host`
+- Handles VXLAN interface creation/deletion
+- Manages FDB entries for peer relationships
+- Runs VXLAN manager service
+- Minimal attack surface (only network operations)
+
+**Router Container (Unprivileged)**:
+- No special privileges required
+- Only handles routing table updates
+- Reads shared discovery data
+- Cannot modify VXLAN interfaces
+- Reduced security risk
+
+#### Option 2: Legacy Single Container (Less Secure)
+
+- Single container with `privileged: true`
+- Handles both VXLAN and routing operations
+- Higher security risk due to broader privileges
+- Simpler deployment but less secure
+
 ### 5. Traffic Flow
 
 1. Service in Stack A wants to reach Service in Stack B
@@ -594,7 +619,7 @@ bridge fdb show dev vxlan0
 
 1. **Scale**: Tested up to 50 interconnected stacks
 2. **Broadcast Domain**: All stacks share VXLAN broadcast domain
-3. **Security**: No encryption by default (rely on network security)
+3. **Security**: No encryption by default (rely on network security). Use secure privilege separation architecture for production deployments.
 4. **Subnet Conflicts**: Manual subnet planning required
 5. **MTU**: Account for VXLAN overhead (50 bytes)
 6. **WSL**: VXLAN tunneling has known issues in WSL environments - test on native Linux hosts

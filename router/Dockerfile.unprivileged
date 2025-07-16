@@ -1,0 +1,41 @@
+# Multi-stage build for unprivileged router
+FROM golang:1.21-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates
+
+# Set working directory
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod tidy && go mod download
+
+# Copy source code
+COPY . .
+
+# Build the unprivileged router
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o unprivileged-router ./cmd/unprivileged-router.go
+
+# Final stage
+FROM alpine:latest
+
+# Install minimal runtime dependencies (no iproute2 or bridge-utils needed)
+RUN apk --no-cache add ca-certificates
+
+# Create working directory
+WORKDIR /root/
+
+# Copy binary from builder
+COPY --from=builder /app/unprivileged-router .
+
+# Create necessary directories
+RUN mkdir -p /var/lib/docker-router /etc/router
+
+# Make binary executable
+RUN chmod +x unprivileged-router
+
+# Default command
+CMD ["./unprivileged-router"]
