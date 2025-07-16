@@ -1,0 +1,75 @@
+services:
+  discovery-a:
+    build: ../../discovery
+    network_mode: host
+    environment:
+      - STACK_ID=stack-a
+      - VNI=1000
+      - MULTICAST_GROUP=239.1.1.1
+      - DISCOVERY_PORT=4790
+      - ANNOUNCE_INTERVAL=30
+      - PEER_TIMEOUT=90
+    volumes:
+      - discovery-data-a:/var/lib/docker-router
+    restart: unless-stopped
+
+  router-a:
+    image: docker-router:latest
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    privileged: true
+    environment:
+      - STACK_ID=stack-a
+      - CONFIG_FILE=/etc/router/routing.yaml
+    volumes:
+      - discovery-data-a:/var/lib/docker-router:ro
+      - ../../router/config/routing-stack-a.yaml:/etc/router/routing.yaml:ro
+    networks:
+      - internal
+    depends_on:
+      - discovery-a
+    restart: unless-stopped
+
+  test-a:
+    image: alpine:latest
+    command: |
+      sh -c "
+        apk add --no-cache curl iputils
+        echo 'Stack A Service Started'
+        while true; do
+          echo '=== Stack A Network Status ==='
+          echo 'My IP:'
+          ip addr show eth0 | grep 'inet ' | awk '{print \$2}'
+          echo 'Routing table:'
+          ip route | grep -E '(172\.|192\.168\.100\.)'
+          echo 'Discovery peers:'
+          if [ -f /shared/discovery.json ]; then
+            cat /shared/discovery.json | grep -A 5 'stack_id' | head -20
+          else
+            echo 'No discovery data'
+          fi
+          echo '=== Testing connectivity ==='
+          echo 'Ping router (192.168.100.1):'
+          ping -c 1 192.168.100.1 > /dev/null 2>&1 && echo 'OK' || echo 'FAIL'
+          echo '================================'
+          sleep 60
+        done
+      "
+    volumes:
+      - discovery-data-a:/shared:ro
+    networks:
+      - internal
+    depends_on:
+      - router-a
+
+volumes:
+  discovery-data-a:
+
+networks:
+  internal:
+    name: stack-a-internal
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

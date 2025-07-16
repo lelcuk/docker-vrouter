@@ -1,0 +1,25 @@
+{
+  "contexts": {
+    "tera": {
+      "description": "Remote Docker host - tera",
+      "host": "ssh://lelcuk@tera",
+      "enabled": true,
+      "compose_file": "docker-compose.stack-a.yml",
+      "stack_name": "stack-a"
+    },
+    "rog": {
+      "description": "Remote Docker host - rog",
+      "host": "ssh://alon@rog",
+      "enabled": true,
+      "compose_file": "docker-compose.stack-b.yml",
+      "stack_name": "stack-b"
+    },
+    "alon-desktop": {
+      "description": "Remote Docker host - alon-B450M-DS3H",
+      "host": "ssh://alon@alon-B450M-DS3H",
+      "enabled": true,
+      "compose_file": "docker-compose.stack-c.yml",
+      "stack_name": "stack-c"
+    }
+  }
+}

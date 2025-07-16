@@ -1,0 +1,39 @@
+{
+  "contexts": {
+    "local": {
+      "description": "Local Docker daemon",
+      "host": "local",
+      "enabled": true,
+      "compose_file": "docker-compose.stack-a.yml",
+      "stack_name": "stack-a"
+    },
+    "remote1": {
+      "description": "Remote Docker host 1 - Production server",
+      "host": "ssh://user@192.168.1.100",
+      "enabled": false,
+      "compose_file": "docker-compose.stack-b.yml",
+      "stack_name": "stack-b"
+    },
+    "remote2": {
+      "description": "Remote Docker host 2 - Test server", 
+      "host": "ssh://user@192.168.1.101",
+      "enabled": false,
+      "compose_file": "docker-compose.stack-c.yml",
+      "stack_name": "stack-c"
+    },
+    "cloud1": {
+      "description": "Cloud instance 1",
+      "host": "ssh://ubuntu@ec2-instance-1.amazonaws.com",
+      "enabled": false,
+      "compose_file": "docker-compose.stack-d.yml",
+      "stack_name": "stack-d"
+    },
+    "cloud2": {
+      "description": "Cloud instance 2",
+      "host": "ssh://ubuntu@ec2-instance-2.amazonaws.com", 
+      "enabled": false,
+      "compose_file": "docker-compose.stack-e.yml",
+      "stack_name": "stack-e"
+    }
+  }
+}

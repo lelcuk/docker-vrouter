@@ -1,0 +1,39 @@
+services:
+  discovery-d:
+    build: ../../discovery
+    network_mode: host
+    environment:
+      - STACK_ID=stack-d
+      - VNI=1003
+      - MULTICAST_GROUP=239.1.1.1
+      - DISCOVERY_PORT=4790
+      - ANNOUNCE_INTERVAL=30
+      - PEER_TIMEOUT=90
+    volumes:
+      - discovery-data-d:/var/lib/docker-router
+    restart: unless-stopped
+
+  test-d:
+    image: alpine:latest
+    command: |
+      sh -c "
+        echo 'Stack D Service Started'
+        while true; do
+          echo '=== Stack D Discovery Status ==='
+          if [ -f /shared/discovery.json ]; then
+            echo 'Discovered peers:'
+            cat /shared/discovery.json | grep -A 20 'peers' || echo 'No peers section'
+          else
+            echo 'No discovery data found'
+          fi
+          echo '================================'
+          sleep 45
+        done
+      "
+    volumes:
+      - discovery-data-d:/shared:ro
+    depends_on:
+      - discovery-d
+
+volumes:
+  discovery-data-d:

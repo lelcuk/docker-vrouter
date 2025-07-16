@@ -1,0 +1,40 @@
+services:
+  # Discovery Container for Stack A
+  discovery-a:
+    build: ../../discovery
+    network_mode: host
+    environment:
+      - STACK_ID=stack-a
+      - VNI=1000
+      - MULTICAST_GROUP=239.1.1.1
+      - DISCOVERY_PORT=4790
+      - ANNOUNCE_INTERVAL=15
+      - PEER_TIMEOUT=45
+    volumes:
+      - discovery-data-a:/var/lib/docker-router
+    restart: unless-stopped
+
+  # Test service A
+  test-a:
+    image: alpine:latest
+    command: |
+      sh -c "
+        echo 'Stack A Test Service Started'
+        while true; do
+          echo 'Stack A: Discovery data:'
+          if [ -f /shared/discovery.json ]; then
+            cat /shared/discovery.json | head -20
+          else
+            echo 'No discovery data found'
+          fi
+          echo '---'
+          sleep 30
+        done
+      "
+    volumes:
+      - discovery-data-a:/shared:ro
+    depends_on:
+      - discovery-a
+
+volumes:
+  discovery-data-a:
